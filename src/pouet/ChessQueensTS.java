@@ -16,6 +16,9 @@ public class ChessQueensTS {
      */
     private int memorySize_;
     
+    /**
+     * Probabilite d'explorer les voisins tabous
+     */
     private double pouet_ = 0.1;
     
     public ChessQueensTS(final int nQueens, final int memorySize) {

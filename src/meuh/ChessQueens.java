@@ -564,7 +564,7 @@ public class ChessQueens {
 //	    model.tabuSearch(argList.get(2));
 	    
 	    long startTime = System.currentTimeMillis();
-	    boolean res2 = model.completeSearch();
+	    model.completeSearch();
 	    long endTime = System.currentTimeMillis();
 	    
 	    System.out.println("Complete search executed in " + (endTime - startTime) + " ms.");

@@ -600,7 +600,7 @@ public class ChessQueensV2 {
 	    ChessQueensV2 model = new ChessQueensV2(argList.get(0), argList.get(1));
 	    
 	    long startTime = System.currentTimeMillis();
-	    boolean res2 = model.completeSearch();
+	    model.completeSearch();
 	    long endTime = System.currentTimeMillis();
 	    
 	    System.out.println("Complete search executed in " + (endTime - startTime) + " ms.");

@@ -1,6 +1,7 @@
 package pouet;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -114,7 +115,21 @@ public class Neighbourhood1 extends Neighbourhood {
 
     @Override
     public Solution aspirationCondition(Solution bestSol) {
-	// TODO Auto-generated method stub
-	return null;
+	Solution res = null;
+	boolean stop = false;
+	
+	Iterator<Pair<Integer,Integer>> it = this.tabuList_.iterator();
+	
+	while(it.hasNext() && (stop == false)) {
+	    Pair<Integer,Integer> p = it.next();
+	    Solution s = new Solution(bestSol, p);
+	    
+	    if(s.cost() < bestSol.cost()) {
+		res = (Solution) s.clone();
+		stop = true;
+	    }
+	}
+	
+	return res;
     }
 }
