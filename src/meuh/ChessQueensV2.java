@@ -217,7 +217,8 @@ public class ChessQueensV2 {
      *         </ul>
      */
     private Boolean isTabu(Integer row, Integer column) {
-	return (this.tabuList.contains(new Pair<Integer, Integer>(row, column)) == false);
+	return (this.tabuList.contains(
+		new Pair<Integer, Integer>(row, column)) == false);
     }
 
     /**
@@ -311,9 +312,6 @@ public class ChessQueensV2 {
 	    // Generation de la solution initiale du run
 	    int[] currentSol = generateSolution(domains);
 	    int currentCost = fitness(currentSol);
-	    
-//	    System.out.print("Solution initiale aleatoire : ");
-//	    printSolution(currentSol);
 	    System.out.println("\nCout initial : " + currentCost);
 
 	    Boolean goOn = true;
@@ -586,24 +584,20 @@ public class ChessQueensV2 {
 	}
 
 	if ((argList != null) && (argList.isEmpty() == false)) {
-	    
-//	    try {
-//		ChessQueensV2 model = new ChessQueensV2(argList.get(0), argList.get(1));
-//		model.tabuSearch(argList.get(2));
-//		boolean res2 = model.completeSearch();
-//	    }
-//	    
-//	    catch(IOException e) {
-//		System.err.println(e.getMessage());
-//	    }
-	    
-	    ChessQueensV2 model = new ChessQueensV2(argList.get(0), argList.get(1));
-	    
 	    long startTime = System.currentTimeMillis();
-	    model.completeSearch();
+	    ChessQueensV2 model = new ChessQueensV2(argList.get(0),
+		    argList.get(1));
 	    long endTime = System.currentTimeMillis();
 	    
-	    System.out.println("Complete search executed in " + (endTime - startTime) + " ms.");
+	    System.out.println("Recherche tabou executee en "
+		    + (endTime - startTime) + " ms.");
+	    
+	    startTime = System.currentTimeMillis();
+	    model.completeSearch();
+	    endTime = System.currentTimeMillis();
+	    
+	    System.out.println("Recherche complete executee en "
+		    + (endTime - startTime) + " ms.");
 	}
     }
 

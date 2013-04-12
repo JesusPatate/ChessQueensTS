@@ -9,48 +9,48 @@ public class Preprocessor1 implements Preprocessor {
 
     @Override
     public Solution preprocess(Solution sol, boolean verbose){
-	List<Integer> pouet = new ArrayList<Integer>(sol.size());
-	List<Pair<Integer,Integer>> buffer = new ArrayList<Pair<Integer,Integer>>();
+	List<Integer> good = new ArrayList<Integer>(sol.size());
+	List<Pair<Integer,Integer>> wrong = new ArrayList<Pair<Integer,Integer>>();
 	List<Integer> costs = new ArrayList<Integer>();
 
 	if(verbose == true) {
 	    System.out.print("Preprocessing ... ");
 	}
-
-	pouet.add(sol.get(0));
-
+	
+	good.add(sol.get(0));
+	
 	for(int i = 1 ; i < sol.size() ; ++i) {
-	    pouet.add(sol.get(i));
+	    good.add(sol.get(i));
 
-	    Solution s = new Solution(pouet);
+	    Solution s = new Solution(good);
 
 	    if(s.cost() != 0) {
-		pouet.remove(pouet.size()-1);
-		buffer.add(new Pair<>(i, sol.get(i)));
+		good.remove(good.size()-1);
+		wrong.add(new Pair<>(i, sol.get(i)));
 	    }
 	}
 
 	boolean addition;
-
-	while(buffer.isEmpty() == false) {
+	
+	while(wrong.isEmpty() == false) {
 	    addition = false;
 	    costs.clear();
 
 	    int i = 0;
 
-	    while(i < buffer.size()) {
-		pouet.add(buffer.get(i).getSecond());
+	    while(i < wrong.size()) {
+		good.add(wrong.get(i).getSecond());
 
-		Solution s = new Solution(pouet);
+		Solution s = new Solution(good);
 
 		if(s.cost() == 0) {
-		    buffer.remove(i);
+		    wrong.remove(i);
 		    addition = true;
 		}
 
 		else {
 		    costs.add(s.cost());
-		    pouet.remove(pouet.size()-1);
+		    good.remove(good.size()-1);
 		    ++i;
 		}
 	    }
@@ -66,8 +66,8 @@ public class Preprocessor1 implements Preprocessor {
 		    }
 		}
 
-		pouet.add(buffer.get(idxMinCost).getSecond());
-		buffer.remove(idxMinCost);
+		good.add(wrong.get(idxMinCost).getSecond());
+		wrong.remove(idxMinCost);
 	    }
 	}
 
@@ -75,6 +75,6 @@ public class Preprocessor1 implements Preprocessor {
 	    System.out.println("done");
 	}
 
-	return new Solution(pouet);
+	return new Solution(good);
     }
 }

@@ -21,6 +21,12 @@ public class Arguments {
     private int tabuListSize_;
 
     /**
+     * Tabu list size.
+     */
+    @Option(name = "--pAspi", usage = "Probability of the aspiration condition")
+    private double pAspi_;
+
+    /**
      * Maximum number of runs.
      */
     @Option(name = "--nRuns", usage = "Maximum number of runs")
@@ -50,6 +56,10 @@ public class Arguments {
 
     public int getTabuListSize() {
 	return this.tabuListSize_;
+    }
+    
+    public double getProbaAspi() {
+	return this.pAspi_;
     }
 
     public int getNumberOfRuns() {

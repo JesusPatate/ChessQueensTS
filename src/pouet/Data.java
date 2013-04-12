@@ -29,15 +29,6 @@ public class Data {
 	    new ArrayList<Pair<Long, Long>>();
 
     /**
-     * Construit un nouveau conteneur de données.
-     */
-    public Data() {
-	this.runs_.add(new Pair<Long, Long>(0L,0L));
-	this.iterations_.add(new Pair<Long, Long>(0L,0L));
-	this.times_.add(new Pair<Long, Long>(0L,0L));
-    }
-
-    /**
      * Retourne les nombres de runs cumulés.
      */
     public long[][] getRuns() {

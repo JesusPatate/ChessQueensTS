@@ -7,23 +7,31 @@ import java.util.Random;
 public class ChessQueensTS {
 
     /**
-     * The number of queens.
+     * Nombre dfe reines
      */
     private int nQueens_;
 
     /**
-     * The size of the tabu list (memory).
+     * Taille de la memoire tabou
      */
     private int memorySize_;
     
     /**
      * Probabilite d'explorer les voisins tabous
+     * (aspiration condition)
      */
-    private double pouet_ = 0.1;
+    private double pAspi_ = .0;
     
     public ChessQueensTS(final int nQueens, final int memorySize) {
 	this.nQueens_ = nQueens;
 	this.memorySize_ = memorySize;
+    }
+    
+    public ChessQueensTS(final int nQueens, final int memorySize,
+	    final double pAspi) {
+	this.nQueens_ = nQueens;
+	this.memorySize_ = memorySize;
+	this.pAspi_ = pAspi;
     }
 
     public Solution search(final Neighbourhood neighbourhood,
@@ -36,15 +44,15 @@ public class ChessQueensTS {
 	Solution currentSol = null;
 	Solution neighbourSol = null;
 
+	// Passé à true quand une solution optimale est trouvée
 	Boolean stop = false;
+	
 	long cntIterations = 0;
 	long cntRuns = 0;
 	long startTime = 0;
 	long endTime = 0;
 	
-	Random rand;
-	
-	// Number of consecutive movements without any improvement
+	// Nombre de mouvements consécutifs sans amélioration
 	Integer noImprovement = 0;
 
 	if(verbose == true) {
@@ -55,6 +63,8 @@ public class ChessQueensTS {
 
 	startTime = System.currentTimeMillis();
 
+	// On continue tant qu'aucune solution n'a été trouvée
+	// et que le nombre maximum de runs n'est pas atteint
 	for (cntRuns = 0; cntRuns < nRuns && stop == false; cntRuns++) {
 	    
 	    if(verbose == true) {
@@ -65,59 +75,49 @@ public class ChessQueensTS {
 	    noImprovement = 0;
 	    cntIterations = 0;
 
+	    // Génération de la solution initiale
 	    currentSol = generator.generate(this.nQueens_, verbose);
 	    bestSol = (Solution) currentSol.clone();
 	    
+	    // Passé à true quand on trouve un voisin au moins
+	    // aussi bon que la meilleure solution connue
 	    Boolean goOn = true;
-
-	    rand = new Random();
 
 	    if (verbose == true) {
 		System.out.println("Initial cost : " + currentSol.cost());
 	    }
-
+	    
+	    // Le run continue tant que l'on trouve un voisin
+	    // au moins aussi bon que la solution courante
+	    // et que il n'est pas une solution optimale
 	    while (goOn && bestSol.cost() > 0) {
 		goOn = false;
 		++cntIterations;
 
-		boolean pouet = neighbourhood.findBestNeighbour(currentSol);
+		neighbourSol = neighbourhood.findNeighbour(currentSol, this.pAspi_);
+		
+		if(neighbourSol != null) {
+		    if (neighbourSol.cost() < bestSol.cost()) {
+			noImprovement = 0;
 
-		if(pouet == true) {
-		    neighbourSol = neighbourhood.getNeighbour();
-
-		    if (neighbourSol.cost() <= bestSol.cost()) {
-
-			if (neighbourSol.cost() < bestSol.cost()) {
-			    noImprovement = 0;
-
-			    if (verbose == true) {
-				System.out.println("New lower cost : "
-					+ neighbourSol.cost());
-			    }
+			if (verbose == true) {
+			    System.out.println("New lower cost : "
+				    + neighbourSol.cost());
 			}
-
-			else {
-			    ++noImprovement;
-			}
-
-			currentSol = neighbourSol;
-			bestSol = (Solution) currentSol.clone();
-
-			try {
-			    neighbourhood.addToTabuList();
-			}
-
-			catch(Exception e) {
-			    e.printStackTrace(System.err);
-			}
-
-			goOn = true;
 		    }
+
+		    else {
+			++noImprovement;
+		    }
+
+		    currentSol = neighbourSol;
+		    bestSol = (Solution) currentSol.clone();
+
+		    goOn = true;
 		}
 		
 		else {
-		    System.out.println("DBG aspiration condition.");
-		    Solution s = neighbourhood.aspirationCondition(bestSol);
+		    Solution s = neighbourhood.exploreTabuList(bestSol);
 			
 		    if(s != null) {
 			System.out.println("DBG new cost = " + s.cost());
@@ -128,8 +128,8 @@ public class ChessQueensTS {
 		    }
 		}
 
-		if (noImprovement > this.memorySize_) {
-		    currentSol.degrade();
+		if ((neighbourSol != null) && (noImprovement > this.memorySize_)) {
+		    neighbourhood.degradeSolution(currentSol);
 		    noImprovement = 0;
 
 		    if (verbose == true) {
@@ -142,6 +142,7 @@ public class ChessQueensTS {
 	    if(bestSol.cost() == 0) {
 		stop = true;
 	    }
+	    
 	    else {
 		if(verbose == true) {
 		    System.out.println("No solution found.");
@@ -158,6 +159,7 @@ public class ChessQueensTS {
 			+ " run(s) after " + (endTime - startTime) + " ms :");
 
 		    bestSol.print();
+		    System.out.println();
 	    }
 
 	    if (data != null) {

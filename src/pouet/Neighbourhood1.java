@@ -7,7 +7,14 @@ import java.util.Random;
 
 import util.Pair;
 
-
+/**
+ * Voisinnage pour la recherche tabou appliquee a un probleme des n reines.
+ * 
+ * <p>
+ * Le mouvement de voisinnage utilise est le deplacement d'une reine dans sa
+ * ligne. L'exploration de ce voisinnage est totale.
+ * </p>
+ */
 public class Neighbourhood1 extends Neighbourhood {
     
     List<Pair<Integer,Integer>> tabuList_ = new ArrayList<Pair<Integer,Integer>>();
@@ -16,27 +23,31 @@ public class Neighbourhood1 extends Neighbourhood {
     
     Solution neighbour_ = null;
     
-    Pair<Integer,Integer> movement_ = null;
-    
     public Neighbourhood1(int tabuListSize) {
 	this.tabuListSize_ = tabuListSize;
     }
     
     @Override
-    public boolean findBestNeighbour(Solution sol) {
+    public Solution findNeighbour(Solution sol, double proba) {
 	List<Pair<Integer,Integer>> bestMoves = new ArrayList<Pair<Integer,Integer>>();
 	int bestCost = sol.cost();
 	
 	Solution currentNeighbour = null;
 	Pair<Integer,Integer> currentMove = null;
 	
-	boolean res = false;
+	this.neighbour_ = null;
+	
+	Random rand = new Random();
+	boolean exploreTabuList = (rand.nextDouble() < proba);
 	
 	for (Integer row = 0; row < sol.size() ; ++row) {
 	    for (Integer column = 0 ; column < sol.size(); ++column) {
-		
-		if((sol.get(row) != column) && (this.tabuList_.contains(row) == false)) {
 		    currentMove = new Pair<Integer, Integer>(row, column);
+		
+		if((sol.get(row) != column) && (
+			(this.tabuList_.contains(currentMove) == false)
+				|| (exploreTabuList == true))) {
+		    
 		    currentNeighbour = new Solution(sol, currentMove);
 		    
 		    if(currentNeighbour.cost() <= bestCost) {
@@ -46,51 +57,43 @@ public class Neighbourhood1 extends Neighbourhood {
 
 			bestMoves.add(new Pair<Integer, Integer>(row, column));
 			bestCost = currentNeighbour.cost();
-			
-			res = true;
 		    }
 		}
 	    }
 	}
 	
 	if (bestMoves.isEmpty() == false) {
-	    Random rand = new Random();
 	    Integer randIndex = rand.nextInt(bestMoves.size());
 	    Pair<Integer, Integer> move = bestMoves.get(randIndex);
 
 	    this.neighbour_ = new Solution(sol, move);
-	    this.movement_ = move;
+	    
+	    this.addToTabuList(move);
 	}
 	
-	return res;
+	return this.neighbour_;
     }
     
-    @Override
-    public void addToTabuList() throws Exception {
+    private void addToTabuList(Pair<Integer,Integer> movement) {
 	
-	if(this.movement_ != null) {
+	if(movement != null) {
 	    if ((this.tabuList_.size() == this.tabuListSize_)
 		    && (this.tabuListSize_ > 0)) {
-		
-//		System.out.println("DBG tabu list is full !");
 		this.tabuList_.remove(0);
 	    }
 
 	    if (this.tabuListSize_ > 0) {
-		
-//		System.out.println("DBG movement added to tabu list.");
-		
-		this.tabuList_.add(this.movement_);
-		this.movement_ = null;
-		this.neighbour_ = null;
+		this.tabuList_.add(movement);
 	    }
-	}
-	
-	else {
-	    throw new Exception("No neighbour to add to the tabu list.");
 	}
     }
     
+    @Override
+    public int getTabuListSize() {
+	return this.tabuListSize_;
+    }
+
+    @Override
     public Solution getNeighbour() {
 	return this.neighbour_;
     }
@@ -114,22 +117,41 @@ public class Neighbourhood1 extends Neighbourhood {
     }
 
     @Override
-    public Solution aspirationCondition(Solution bestSol) {
+    public Solution exploreTabuList(Solution bestSol) {
 	Solution res = null;
 	boolean stop = false;
 	
 	Iterator<Pair<Integer,Integer>> it = this.tabuList_.iterator();
 	
-	while(it.hasNext() && (stop == false)) {
-	    Pair<Integer,Integer> p = it.next();
-	    Solution s = new Solution(bestSol, p);
+	while((stop == false) && it.hasNext()) {
+	    Pair<Integer,Integer> move = it.next();
+	    Solution s = new Solution(bestSol, move);
 	    
 	    if(s.cost() < bestSol.cost()) {
 		res = (Solution) s.clone();
 		stop = true;
+		
+		this.tabuList_.remove(move);
+		this.tabuList_.add(move);
 	    }
 	}
 	
 	return res;
+    }
+    
+    @Override
+    public Solution degradeSolution(Solution sol) {
+	Random rand = new Random();
+	
+	if(sol != null) {
+	    int row = rand.nextInt(sol.size());
+	    int column = rand.nextInt(sol.size());
+
+	    sol.set(row, column);
+
+	    addToTabuList(new Pair<Integer, Integer>(row,column));
+	}
+	
+	return sol;
     }
 }

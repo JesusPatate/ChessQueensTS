@@ -4,12 +4,14 @@ package pouet;
 public interface SolutionGenerator {
     
     /**
-     * Generates an initial solution of a n-queens problem.
+     * Genere une solution initiale a un probleme des n reines
      * 
      * @param size
-     *            The number of queens
+     *            Le nombre de reines du problem
+     * @param verbose
+     *            Si l'affiche en console est active
      * 
-     * @return A solution
+     * @return Une solution
      */
     public Solution generate(Integer size, boolean verbose);
 }

@@ -2,6 +2,7 @@ package pouet;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -9,42 +10,66 @@ import java.util.Set;
 import util.Pair;
 
 /**
- * Exploration partielle du voisinnage.
- * Un mouvement de voisinnage est le déplacement d'une reine dans sa ligne.
+ * Voisinnage pour la recherche tabou appliquee a un probleme des n reines.
+ * 
+ * <p>
+ * Le mouvement de voisinnage utilise est le deplacement d'une reine dans sa
+ * ligne. L'exploration de ce voisinnage est partielle (seules les reines en
+ * conflit peuvent être deplacees).
+ * </p>
  */
 public class Neighbourhood3 extends Neighbourhood {
     
-    Set<Integer> tabuList_ = new HashSet<Integer>();
+    /**
+     * Liste tabou.
+     * 
+     * <p>
+     * Contient la liste des movements tabous, des paires (ligne, colonne).
+     * </p>
+     */
+    Set<Pair<Integer, Integer>> tabuList_ =
+	    new HashSet<Pair<Integer, Integer>>();
     
     int tabuListSize_;
     
     Solution neighbour_ = null;
-    
-    int movedQueen_ = -1;
     
     public Neighbourhood3(int tabuListSize) {
 	this.tabuListSize_ = tabuListSize;
     }
     
     @Override
-    public boolean findBestNeighbour(Solution sol) {
-	List<Pair<Integer, Integer>> bestMoves = new ArrayList<Pair<Integer, Integer>>();
+    public Solution findNeighbour(Solution sol, double proba) {
+	List<Pair<Integer, Integer>> bestMoves =
+		new ArrayList<Pair<Integer, Integer>>();
+
 	int bestCost = sol.cost();
-	
 	Solution currentNeighbour = null;
 	Pair<Integer, Integer> currentMove = null;
-	
+
+	// Passe a true lorsqu'un voisin "acceptable" est trouve
 	boolean stop = false;
+
+	this.neighbour_ = null;
 	
+	Random rand = new Random();
+	boolean exploreTabuList = (rand.nextDouble() < proba);
+
 	for(int row = 0 ; (row < sol.size()) && (stop == false) ; ++row) {
-	    if(this.tabuList_.contains(row) == false) {
-		Set<Integer> meuh = pouet(sol, row);
-		
-		if(meuh.isEmpty() == false) {
-		    for(int column = 0 ; column < sol.size() ; ++column) {
-			if(sol.get(row) != column) {
-			    currentMove = new Pair<Integer, Integer>(row, column);
-			    currentNeighbour = new Solution(sol, currentMove);
+	    boolean conflict = isConflictual(sol, row);
+
+	    // Seules les reines en conflit peuvent etre deplacees
+	    if(conflict == true) {
+		for(int column = 0 ; column < sol.size() ; ++column) {
+		    if(sol.get(row) != column) {
+			
+			if((this.tabuList_.contains(currentMove) == false)
+				|| (exploreTabuList == true)) {
+
+			    currentMove = new Pair<Integer, Integer>(
+				    row, column);
+			    currentNeighbour = new Solution(
+				    sol, currentMove);
 
 			    if(currentNeighbour.cost() <= bestCost) {
 				if(currentNeighbour.cost() < bestCost) {
@@ -52,7 +77,9 @@ public class Neighbourhood3 extends Neighbourhood {
 				    stop = true;
 				}
 
-				bestMoves.add(new Pair<Integer, Integer>(currentMove));
+				bestMoves.add(new Pair<Integer, Integer>(
+					currentMove));
+
 				bestCost = currentNeighbour.cost();
 			    }
 			}
@@ -60,36 +87,31 @@ public class Neighbourhood3 extends Neighbourhood {
 		}
 	    }
 	}
-	
+
+	// Selection aleatoire parmi tous les voisins "acceptables"
+	// de meilleur cout
 	if(bestMoves.isEmpty() == false) {
-	    Random rand = new Random();
 	    Integer randIndex = rand.nextInt(bestMoves.size());
 	    Pair<Integer, Integer> move = bestMoves.get(randIndex);
 	    
 	    this.neighbour_ = new Solution(sol, move);
-	    this.movedQueen_ = move.getFirst();
+	    
+	    this.addToTabuList(move);
 	}
 	
-	return (bestMoves.isEmpty() == false);
+	return this.neighbour_;
     }
     
-    public void addToTabuList() throws Exception {
-	
-	if(this.movedQueen_ > -1) {
+    private void addToTabuList(Pair<Integer, Integer> movement) {
+	if(movement != null) {
 	    if ((this.tabuList_.size() == this.tabuListSize_)
 		    && (this.tabuListSize_ > 0)) {
 		this.tabuList_.remove(0);
 	    }
 
 	    if (this.tabuListSize_ > 0) {
-		this.tabuList_.add(this.movedQueen_);
-		this.movedQueen_ = -1;
-		this.neighbour_ = null;
+		this.tabuList_.add(movement);
 	    }
-	}
-	
-	else {
-	    throw new Exception("No neighbour to add to the tabu list.");
 	}
     }
     
@@ -101,50 +123,61 @@ public class Neighbourhood3 extends Neighbourhood {
      * 
      * @return
      */
-    private Set<Integer> pouet(Solution sol, int row) {
-	Set<Integer> attackingQueens = new HashSet<Integer>();
+    private boolean isConflictual(Solution sol, int row) {
+	boolean conflict = false;
 	
-	for (int j = 0 ; j < sol.size() ; ++j) {
+	for (int j = 0 ; (j < sol.size()) && (conflict == false) ; ++j) {
 	    if ( (j != row) && (sol.get(row) == sol.get(j)) ) {
-		attackingQueens.add(j);
+		conflict = true;
 	    }
 	}
 	
-	int[] aux = new int[sol.size()];
+	if(conflict == false) {
+	    int[] aux = new int[sol.size()];
 
-	for (int i = 0 ; i < sol.size() ; ++i) {
-	    aux[i] = sol.get(i) + (row - i);
-	}
+	    for (int i = 0 ; i < sol.size() ; ++i) {
+		aux[i] = sol.get(i) + (row - i);
+	    }
 
-	Solution s = new Solution(aux);
+	    Solution s = new Solution(aux);
 
-	for (int j = 0 ; j < s.size() ; ++j) {
-	    if ( (j != row) && (s.get(row) == s.get(j)) ) {
-		attackingQueens.add(j);
+	    for (int j = 0 ; (j < sol.size()) && (conflict == false) ; ++j) {
+		if ( (j != row) && (s.get(row) == s.get(j)) ) {
+		    conflict = true;
+		}
+	    }
+	    
+	    if(conflict == false) {
+		aux = new int[sol.size()];
+
+		for (int i = 0 ; i < sol.size() ; ++i) {
+		    aux[i] = sol.get(i) - (row - i);
+		}
+
+		s = new Solution(aux);
+
+		for (int j = 0 ; (j < sol.size()) && (conflict == false) ; ++j) {
+		    if ( (j != row) && (s.get(row) == s.get(j)) ) {
+			conflict = true;
+		    }
+		}
 	    }
 	}
 	
-	aux = new int[sol.size()];
-
-	for (int i = 0 ; i < sol.size() ; ++i) {
-	    aux[i] = sol.get(i) - (row - i);
-	}
-
-	s = new Solution(aux);
-
-	for (int j = 0 ; j < s.size() ; ++j) {
-	    if ( (j != row) && (s.get(row) == s.get(j)) ) {
-		attackingQueens.add(j);
-	    }
-	}
-	
-	return attackingQueens;
+	return conflict;
     }
     
+    @Override
+    public int getTabuListSize() {
+	return this.tabuListSize_;
+    }
+
+    @Override
     public Solution getNeighbour() {
 	return this.neighbour_;
     }
-    
+
+    @Override
     public void clearTabuList() {
 	this.tabuList_.clear();
     }
@@ -155,8 +188,8 @@ public class Neighbourhood3 extends Neighbourhood {
 	
 	output += "{";
 	
-	for(int i : this.tabuList_) {
-	    output += i + " ";
+	for(Pair<Integer,Integer> p : this.tabuList_) {
+	    output += p + " ";
 	}
 	
 	output += "}";
@@ -165,8 +198,41 @@ public class Neighbourhood3 extends Neighbourhood {
     }
 
     @Override
-    public Solution aspirationCondition(Solution bestSol) {
-	// TODO Auto-generated method stub
-	return null;
+    public Solution exploreTabuList(Solution bestSol) {
+	Solution res = null;
+	boolean stop = false;
+	
+	Iterator<Pair<Integer,Integer>> it = this.tabuList_.iterator();
+	
+	while((stop == false) && it.hasNext()) {
+	    Pair<Integer,Integer> move = it.next();
+	    Solution s = new Solution(bestSol, move);
+	    
+	    if(s.cost() < bestSol.cost()) {
+		res = (Solution) s.clone();
+		stop = true;
+		
+		this.tabuList_.remove(move);
+		this.tabuList_.add(move);
+	    }
+	}
+	
+	return res;
+    }
+    
+    @Override
+    public Solution degradeSolution(Solution sol) {
+	Random rand = new Random();
+	
+	if(sol != null) {
+	    int row = rand.nextInt(sol.size());
+	    int column = rand.nextInt(sol.size());
+
+	    sol.set(row, column);
+
+	    addToTabuList(new Pair<Integer, Integer>(row,column));
+	}
+	
+	return sol;
     }
 }

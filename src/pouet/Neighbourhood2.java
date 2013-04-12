@@ -9,7 +9,14 @@ import java.util.Set;
 
 import util.Pair;
 
-
+/**
+ * Voisinnage pour la recherche tabou appliquee a un probleme des n reines.
+ * 
+ * <p>
+ * Le mouvement de voisinnage utilise est le swap de 2 reines (leurs colonnes
+ * sont echangees). L'exploration de ce voisinnage est totale.
+ * </p>
+ */
 public class Neighbourhood2 extends Neighbourhood {
     
     Set<Pair<Integer,Integer>> tabuList_ = new HashSet<Pair<Integer,Integer>>();
@@ -25,7 +32,7 @@ public class Neighbourhood2 extends Neighbourhood {
     }
 
     @Override
-    public boolean findBestNeighbour(Solution sol) {
+    public Solution findNeighbour(Solution sol, double proba) {
 	
 	int bestCost = sol.cost();
 	List<Pair<Integer, Integer>> bestMoves =
@@ -33,12 +40,18 @@ public class Neighbourhood2 extends Neighbourhood {
 	
 	Pair<Integer, Integer> currentMove = null;
 	
+	this.neighbour_ = null;
+	
+	Random rand = new Random();
+	boolean exploreTabuList = (rand.nextDouble() < proba);
+	
 	for(Integer row1 = 0 ; row1 < sol.size()-1 ; ++row1) {
 	    for(Integer row2 = row1+1 ; row2 < sol.size() ; ++row2) {
-		
 		currentMove = new Pair<Integer, Integer>(row1, row2);
 		
-		if(this.tabuList_.contains(currentMove) == false) {
+		if((this.tabuList_.contains(currentMove) == false)
+			|| (exploreTabuList == true)) {
+		    
 		    sol.swap(row1, row2);
 		    
 		    if(sol.cost() <= bestCost) {
@@ -56,22 +69,20 @@ public class Neighbourhood2 extends Neighbourhood {
 	}
 	
 	if(bestMoves.isEmpty() == false) {
-	    Random rand = new Random();
 	    Integer randIndex = rand.nextInt(bestMoves.size());
 	    Pair<Integer, Integer> move = bestMoves.get(randIndex);
 	    
 	    this.neighbour_ = (Solution) sol.clone();
 	    this.neighbour_.swap(move.getFirst(), move.getSecond());
 	    
-	    this.movement_ = move;
+	    this.addToTabuList(move);
 	}
 	
-	return (bestMoves.isEmpty() == false);
+	return this.neighbour_;
     }
-
-    @Override
-    public void addToTabuList() throws Exception {
-	if(this.movement_ != null) {
+    
+    private void addToTabuList(Pair<Integer, Integer> movement) {
+	if(movement != null) {
 	    if ((this.tabuList_.size() == this.tabuListSize_)
 		    && (this.tabuListSize_ > 0)) {
 		
@@ -79,15 +90,14 @@ public class Neighbourhood2 extends Neighbourhood {
 	    }
 
 	    if (this.tabuListSize_ > 0) {
-		this.tabuList_.add(this.movement_);
-		this.movement_ = null;
-		this.neighbour_ = null;
+		this.tabuList_.add(movement);
 	    }
 	}
-	
-	else {
-	    throw new Exception("No neighbour to add to the tabu list.");
-	}
+    }
+    
+    @Override
+    public int getTabuListSize() {
+	return this.tabuListSize_;
     }
 
     @Override
@@ -117,24 +127,43 @@ public class Neighbourhood2 extends Neighbourhood {
     }
 
     @Override
-    public Solution aspirationCondition(Solution bestSol) {
+    public Solution exploreTabuList(Solution bestSol) {
 	Solution res = null;
 	boolean stop = false;
 	
 	Iterator<Pair<Integer,Integer>> it = this.tabuList_.iterator();
 	
-	while(it.hasNext() && (stop == false)) {
-	    Pair<Integer,Integer> p = it.next();
+	while((stop == false) && it.hasNext()) {
+	    Pair<Integer,Integer> move = it.next();
 	    Solution s = (Solution) bestSol.clone();
 	    
-	    s.swap(p.getFirst(), p.getSecond());
+	    s.swap(move.getFirst(), move.getSecond());
 	    
 	    if(s.cost() < bestSol.cost()) {
 		res = (Solution) s.clone();
 		stop = true;
+		
+		this.tabuList_.remove(move);
+		this.tabuList_.add(move);
 	    }
 	}
 	
 	return res;
+    }
+    
+    @Override
+    public Solution degradeSolution(Solution sol) {
+	Random rand = new Random();
+	
+	if(sol != null) {
+	    int index1 = rand.nextInt(sol.size());
+	    int index2 = rand.nextInt(sol.size());
+
+	    sol.swap(index1, index2);
+
+	    addToTabuList(new Pair<Integer, Integer>(index1, index2));
+	}
+	
+	return sol;
     }
 }

@@ -10,9 +10,13 @@ import java.util.Set;
 import util.Pair;
 
 /**
+ * Voisinnage pour la recherche tabou appliquee a un probleme des n reines.
  * 
- * Exploration partielle du voisinnage.
- * Un mouvement de voisinnage est le swap entre 2 reines (échange des colonnes).
+ * <p>
+ * Le mouvement de voisinnage utilise est le swap de 2 reines (leurs colonnes
+ * sont echangees). L'exploration de ce voisinnage est partielle (seules les
+ * reines en conflit peuvent être deplacees).
+ * </p>
  */
 public class Neighbourhood4 extends Neighbourhood {
     
@@ -29,24 +33,34 @@ public class Neighbourhood4 extends Neighbourhood {
     }
     
     @Override
-    public boolean findBestNeighbour(Solution sol) {
+    public Solution findNeighbour(Solution sol, double proba) {
 	List<Pair<Integer, Integer>> bestMoves = new ArrayList<Pair<Integer, Integer>>();
 	int bestCost = sol.cost();
 	
 	Pair<Integer, Integer> currentMove = null;
 	
+	// Passe a true lorsqu'un voisin "acceptable" est trouve
 	boolean stop = false;
 	
+	this.neighbour_ = null;
+	
+	Random rand = new Random();
+	boolean exploreTabuList = (rand.nextDouble() < proba);
+	
 	for(int row1 = 0 ; (row1 < sol.size()) && (stop == false) ; ++row1) {
-	    Set<Integer> meuh = pouet(sol, row1);
+	    boolean conflict = isConflictual(sol, row1);
 
-	    if(meuh.isEmpty() == false) {
+	    // Seules les reines en conflit peuvent etre deplacees
+	    // (cette condition n'est pas vraie la seconde reine du swap) 
+	    if(conflict == true) {
 
 		for(int row2 = 0 ; row2 < sol.size() ; ++row2) {
 		    if(sol.get(row1) != row2) {
 			currentMove = new Pair<Integer, Integer>(row1, row2);
 
-			if(this.tabuList_.contains(currentMove) == false) {
+			if((this.tabuList_.contains(currentMove) == false)
+				|| (exploreTabuList == true)) {
+			    
 			    sol.swap(row1, row2);
 			    
 			    if(sol.cost() <= bestCost) {
@@ -67,23 +81,24 @@ public class Neighbourhood4 extends Neighbourhood {
 	    }
 	}
 	
+	// Selection aleatoire parmi tous les voisins "acceptables"
+	// de meilleur cout
 	if(bestMoves.isEmpty() == false) {
-	    Random rand = new Random();
 	    Integer randIndex = rand.nextInt(bestMoves.size());
 	    Pair<Integer, Integer> move = bestMoves.get(randIndex);
 	    
 	    this.neighbour_ = (Solution) sol.clone();
 	    this.neighbour_.swap(move.getFirst(), move.getSecond());
 	    
-	    this.movement_ = move;
+	    this.addToTabuList(move);
 	}
 	
-	return (bestMoves.isEmpty() == false);
+	return this.neighbour_;
     }
     
-    public void addToTabuList() throws Exception {
+    private void addToTabuList(Pair<Integer, Integer> movement) {
 	
-	if(this.movement_ != null) {
+	if(movement != null) {
 	    if ((this.tabuList_.size() == this.tabuListSize_)
 		    && (this.tabuListSize_ > 0)) {
 		
@@ -91,27 +106,26 @@ public class Neighbourhood4 extends Neighbourhood {
 	    }
 
 	    if (this.tabuListSize_ > 0) {
-		this.tabuList_.add(this.movement_);
-		this.movement_ = null;
-		this.neighbour_ = null;
+		this.tabuList_.add(movement);
 	    }
-	}
-	
-	else {
-	    throw new Exception("No neighbour to add to the tabu list.");
 	}
     }
     
     /**
-     * Tests whether a queen is conflictual.
-     *  
-     * @param sol A solution
-     * @param row The row index of the queen
+     * Teste si une reine d'une solution est en conflit.
      * 
-     * @return
+     * @param sol
+     *            Une solution d'un probleme des n reines
+     * @param row
+     *            L'index d'une reine de la solution
+     * 
+     * @return <ul>
+     *         <li>true si la reine est menacee par une autre</li>
+     *         <li>flase sinon</li>
+     *         </ul>
      */
-    private Set<Integer> pouet(Solution sol, int row) {
-	Set<Integer> attackingQueens = new HashSet<Integer>();
+    private boolean isConflictual(Solution sol, int row) {
+	boolean conflict = false;
 	
 	int[] aux = new int[sol.size()];
 
@@ -121,33 +135,42 @@ public class Neighbourhood4 extends Neighbourhood {
 
 	Solution s = new Solution(aux);
 
-	for (int j = 0 ; j < s.size() ; ++j) {
+	for (int j = 0 ; (j < sol.size()) && (conflict == false) ; ++j) {
 	    if ( (j != row) && (s.get(row) == s.get(j)) ) {
-		attackingQueens.add(j);
+		conflict = true;
 	    }
 	}
 	
-	aux = new int[sol.size()];
+	if(conflict == false) {
+	    aux = new int[sol.size()];
 
-	for (int i = 0 ; i < sol.size() ; ++i) {
-	    aux[i] = sol.get(i) - (row - i);
-	}
+	    for (int i = 0 ; i < sol.size() ; ++i) {
+		aux[i] = sol.get(i) - (row - i);
+	    }
 
-	s = new Solution(aux);
+	    s = new Solution(aux);
 
-	for (int j = 0 ; j < s.size() ; ++j) {
-	    if ( (j != row) && (s.get(row) == s.get(j)) ) {
-		attackingQueens.add(j);
+	    for (int j = 0 ; (j < sol.size()) && (conflict == false) ; ++j) {
+		if ( (j != row) && (s.get(row) == s.get(j)) ) {
+		    conflict = true;
+		}
 	    }
 	}
 	
-	return attackingQueens;
+	return conflict;
     }
     
+    @Override
+    public int getTabuListSize() {
+	return this.tabuListSize_;
+    }
+
+    @Override
     public Solution getNeighbour() {
 	return this.neighbour_;
     }
     
+    @Override
     public void clearTabuList() {
 	this.tabuList_.clear();
     }
@@ -168,24 +191,43 @@ public class Neighbourhood4 extends Neighbourhood {
     }
 
     @Override
-    public Solution aspirationCondition(Solution bestSol) {
+    public Solution exploreTabuList(Solution bestSol) {
 	Solution res = null;
 	boolean stop = false;
 	
 	Iterator<Pair<Integer,Integer>> it = this.tabuList_.iterator();
 	
-	while(it.hasNext() && (stop == false)) {
-	    Pair<Integer,Integer> p = it.next();
+	while((stop == false) && it.hasNext()) {
+	    Pair<Integer,Integer> move = it.next();
 	    Solution s = (Solution) bestSol.clone();
 	    
-	    s.swap(p.getFirst(), p.getSecond());
+	    s.swap(move.getFirst(), move.getSecond());
 	    
 	    if(s.cost() < bestSol.cost()) {
 		res = (Solution) s.clone();
 		stop = true;
+		
+		this.tabuList_.remove(move);
+		this.tabuList_.add(move);
 	    }
 	}
 	
 	return res;
+    }
+    
+    @Override
+    public Solution degradeSolution(Solution sol) {
+	Random rand = new Random();
+	
+	if(sol != null) {
+	    int index1 = rand.nextInt(sol.size());
+	    int index2 = rand.nextInt(sol.size());
+
+	    sol.swap(index1, index2);
+
+	    addToTabuList(new Pair<Integer, Integer>(index1, index2));
+	}
+	
+	return sol;
     }
 }

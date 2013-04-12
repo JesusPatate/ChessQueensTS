@@ -21,9 +21,18 @@ public class Main {
     
     private static String PLOTS_DIR = "plots/";
     
+    /**
+     * Enregistre des graphiques a partir des donnees de la recherche tabou
+     * (temps d'execution, nombre d'iterations, nombre de runs)
+     * 
+     * @param data Les donnees de la recherche tabou
+     * @param nQueens Le nombre de reines du probleme traite
+     * @param tabuSize La taille de la memoire tabou
+     * 
+     * @throws IOException
+     */
     private static void drawPlots(final Data data, final int nQueens,
-	    final int tabuSize) throws NumberFormatException,
-	    ArrayIndexOutOfBoundsException, IOException {
+	    final int tabuSize) throws IOException {
 
 	ArrayDataSet data_exec = new ArrayDataSet(data.getTimes());
 	ArrayDataSet data_runs = new ArrayDataSet(data.getRuns());
@@ -122,14 +131,18 @@ public class Main {
 	    Preprocessor preproc = new Preprocessor1();
 	    SolutionGenerator generator = new Generator2(preproc);
 
-	    Neighbourhood neighbourhood = new Neighbourhood4(
+	    Neighbourhood neighbourhood = new Neighbourhood2(
 		    arguments.getTabuListSize());
 
 	    ChessQueensTS tabuSearch = new ChessQueensTS(
-		    arguments.getNumberOfQueens(), arguments.getTabuListSize());
+		    arguments.getNumberOfQueens(), arguments.getTabuListSize(),
+		    arguments.getProbaAspi());
 
 	    for (int i = 0; i < arguments.getNumberOfExecutions(); ++i) {
-
+		if(arguments.getVerbose() == true) {
+		    System.out.println("Execution " + (i+1));
+		}
+		
 		tabuSearch.search(neighbourhood, generator,
 		        arguments.getNumberOfRuns(), data,
 		        arguments.getVerbose());

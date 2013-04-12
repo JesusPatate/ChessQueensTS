@@ -16,7 +16,7 @@ public class Preprocessor2 implements Preprocessor {
 	    System.out.print("Preprocessing ... ");
 	}
 	
-	// On initialise Good en y inserant la premiere reine 
+	// Etape 1 : les reines dispatchee dans good et wrong
 	good.add(sol.get(0));
 
 	// On tente ensuite d'ajouter la reine suivante de la solution initiale

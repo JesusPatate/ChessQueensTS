@@ -4,7 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-
+/**
+ * Generateur ameliore de solution initiale a un probleme des n reines.
+ * 
+ * <p>Aucune reine des solutions generees ne peut partager sa colonne
+ * avec une autre.</p>
+ * 
+ */
 public class Generator2 implements SolutionGenerator {
     
     private Preprocessor preprocessor_ = null;
@@ -17,6 +23,7 @@ public class Generator2 implements SolutionGenerator {
 
     @Override
     public Solution generate(Integer size, boolean verbose) {
+	Solution initSolution = null;
 	List<Integer> values = new ArrayList<Integer>();
 	
 	if(verbose == true) {
@@ -43,8 +50,14 @@ public class Generator2 implements SolutionGenerator {
 	    System.out.println("done");
 	}
 	
-	return (this.preprocessor_ != null) ?
-		this.preprocessor_.preprocess(new Solution(values), verbose)
-		: new Solution(values);
+	if(this.preprocessor_ != null) {
+	    initSolution = this.preprocessor_.preprocess(
+		    new Solution(values), verbose);
+	}
+	else {
+	    initSolution = new Solution(values);
+	}
+	
+	return initSolution;
     }
 }
