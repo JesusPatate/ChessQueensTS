@@ -1,4 +1,4 @@
-package pouet;
+package object;
 
 /**
  * Définit un voisinnage pour la recherche tabou appliquee

@@ -1,4 +1,4 @@
-package pouet;
+package object;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,7 +14,6 @@ import com.panayotis.gnuplot.JavaPlot;
 import com.panayotis.gnuplot.dataset.ArrayDataSet;
 import com.panayotis.gnuplot.plot.DataSetPlot;
 import com.panayotis.gnuplot.style.PlotStyle;
-import com.panayotis.gnuplot.style.Style;
 import com.panayotis.gnuplot.terminal.ImageTerminal;
 
 public class Main {
@@ -131,7 +130,7 @@ public class Main {
 	    Preprocessor preproc = new Preprocessor1();
 	    SolutionGenerator generator = new Generator2(preproc);
 
-	    Neighbourhood neighbourhood = new Neighbourhood2(
+	    Neighbourhood neighbourhood = new Neighbourhood4(
 		    arguments.getTabuListSize());
 
 	    ChessQueensTS tabuSearch = new ChessQueensTS(

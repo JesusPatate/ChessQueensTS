@@ -1,4 +1,4 @@
-package pouet;
+package object;
 
 import java.util.ArrayList;
 

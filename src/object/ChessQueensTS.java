@@ -1,4 +1,4 @@
-package pouet;
+package object;
 
 import java.io.IOException;
 import java.util.Random;

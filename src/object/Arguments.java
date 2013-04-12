@@ -1,4 +1,4 @@
-package pouet;
+package object;
 
 import org.kohsuke.args4j.Option;
 
